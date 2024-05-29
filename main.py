@@ -3,7 +3,6 @@ from bs4 import BeautifulSoup
 
 from converter.converter import html_to_epub
 
-link = "https://arxiv.org/abs/1509.02971"
 
 class NoAr5ivCache(Exception):
     pass
@@ -53,12 +52,19 @@ def get_author(url):
                 return first_author_last_name
     except:
         return 'Unknown'
+
+def get_title(url):
+    soup = BeautifulSoup(download_html(url), 'html.parser')
+    title = soup.find('h1', class_='title').text
+    return title.replace("Title:", '')
+
 def convert_latex_source_to_xml(url):
     return ""
 
 def arxiv_to_paper(arxiv_link):
     assert "arxiv" in arxiv_link
 
+    title = get_title(arxiv_link)
     author = get_author(arxiv_link)
     html_content = ""
     try:
@@ -67,8 +73,8 @@ def arxiv_to_paper(arxiv_link):
     except NoAr5ivCache:
         website_data = convert_latex_source_to_xml(arxiv_link)
 
-    html_to_epub(website_data, author)
+    html_to_epub(website_data,title, author)
 
 
-
+link = "https://arxiv.org/abs/2403.09611"
 arxiv_to_paper(link)

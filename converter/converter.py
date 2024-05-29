@@ -25,6 +25,13 @@ def add_xmlns_to_math_elements(soup):
             math_elem['xmlns'] = "http://www.w3.org/1998/Math/MathML"
     return soup
 
+def add_xmlns_to_svg_elements(soup):
+    svg_elements = soup.find_all('svg')
+    for svg_elem in svg_elements:
+        if 'xmlns' not in svg_elem.attrs:
+            svg_elem['xmlns'] = "http://www.w3.org/1998/Math/MathML"
+    return soup
+
 def remove_merror(soup):
     merror_elems = soup.find_all('merror')
     for merror_elem in merror_elems:
@@ -37,8 +44,12 @@ def modify_hrefs(soup):
         if 'href' in ann_elem.attrs:
             if 'http' in ann_elem['href']:
                 continue
-            section = id_to_section[ann_elem['href'].replace('#', '')]
+            try:
+                section = id_to_section[ann_elem['href'].replace('#', '')]
+            except KeyError:
+                continue
             ann_elem['href'] = ann_elem['href'].replace('#', f'{section}.xhtml#')
+            # ann_elem['epub:type'] = "noteref"
     return soup
 
 def handle_images(soup):
@@ -48,9 +59,9 @@ def handle_images(soup):
         img['src'] = os.path.join('../images/', os.path.basename(img['src']))
     return soup
 
-
 preprocessing = [add_name_to_annotation_xml,
                  add_xmlns_to_math_elements,
+                 add_xmlns_to_svg_elements,
                  remove_merror,
                  modify_hrefs,
                  handle_images]
@@ -75,6 +86,10 @@ def extract_all_references(article):
     for child in article.children:
         if child.name:  # Check if child is a tag and not a NavigableString
             section_title = remove_numbers_spaces_special_chars(get_section_title(child))
+            try:
+                id_to_section[child['id']] = section_title
+            except:
+                pass
             # loop on all children of child and get all values of the key id
             for element in child.find_all(id=True):
                 id_to_section[element['id']] = section_title
@@ -90,13 +105,13 @@ def process_html_file(html):
 
     article = soup.find_all('article')[0]
 
-    data['title'] = extract_title(article)
+    # data['title'] = extract_title(article)
     id_to_section = extract_all_references(article)
     # Loop through all children of the 'article' tag
     for child in article.children:
         if child.name:  # Check if child is a tag and not a NavigableString
             classes = child.get('class', [])
-            if 'ltx_section' in classes  or 'ltx_bibliography' in classes or 'ltx_abstract' in classes:
+            if 'ltx_section' in classes  or 'ltx_bibliography' in classes or 'ltx_abstract' in classes or 'ltx_appendix' in classes:
                 section_title = get_section_title(child)
 
                 new_html = BeautifulSoup(get_chapter_content(section_title), 'html')
@@ -132,11 +147,13 @@ def setup_directories(book_dir, EPUB_dir, meta_dir, css_dir, img_dir, xhtml_dir)
     os.makedirs(css_dir)
     os.makedirs(img_dir)
     os.makedirs(xhtml_dir)
-
+def remove_non_alphanumeric(s):
+    import re
+    return re.sub(r'[^a-zA-Z0-9]', '', s)
 def save_files(book_dir, meta_dir, EPUB_dir, css_dir, img_dir, xhtml_dir, data, images):
     save_file(os.path.join(book_dir, 'mimetype'), get_mimetype())
     save_file(os.path.join(meta_dir, 'container.xml'), get_container_xml())
-    save_file(os.path.join(EPUB_dir, 'package.opf'), get_package_opf(data['title'], data['author'], data['sections'], images))
+    save_file(os.path.join(EPUB_dir, 'package.opf'), get_package_opf(remove_non_alphanumeric(data['title']), data['author'], data['sections'], images))
 
     save_file(os.path.join(css_dir, 'commonltr.css'), get_common_itr_css())
     save_file(os.path.join(css_dir, 'epub.css'), get_epub_css())
@@ -157,10 +174,11 @@ def create_epub(book_dir, output_epub):
                 file_path = os.path.join(foldername, filename)
                 zipf.write(file_path, arcname=os.path.relpath(file_path, book_dir))
 
-def html_to_epub(website_data, author= 'Unknown', output_epub='book.epub'):
+def html_to_epub(website_data, title, author= 'Unknown', output_epub='book.epub'):
     html_content, images = website_data
     book_dir = 'tmp'
     data = process_html_file(html_content)
+    data['title'] = title
     data['author'] = author
     data['sections'] = [{
                     'title': 'titlepage',
@@ -189,10 +207,5 @@ def html_to_epub(website_data, author= 'Unknown', output_epub='book.epub'):
 
     # shutil.rmtree(book_dir, ignore_errors=True)
 
-
-# Execute the process
-if __name__ == '__main__':
-
-    html_to_epub()
 
 
