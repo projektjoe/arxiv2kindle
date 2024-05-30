@@ -56,6 +56,7 @@ def get_author(url):
 def get_title(url):
     soup = BeautifulSoup(download_html(url), 'html.parser')
     title = soup.find('h1', class_='title').text
+    title = title.replace('&', 'and')
     return title.replace("Title:", '')
 
 def convert_latex_source_to_xml(url):

@@ -59,12 +59,25 @@ def handle_images(soup):
         img['src'] = os.path.join('../images/', os.path.basename(img['src']))
     return soup
 
+def remove_latex_errors(soup):
+    for elem in soup.find_all():
+        if 'ltx_ERROR' in elem.get('class', []):
+            elem.decompose()
+    return soup
+def remove_styling(soup):
+    elements_with_style = soup.find_all(style=True)
+    for element in elements_with_style:
+        del element['style']
+    return soup
+
 preprocessing = [add_name_to_annotation_xml,
                  add_xmlns_to_math_elements,
                  add_xmlns_to_svg_elements,
                  remove_merror,
                  modify_hrefs,
-                 handle_images]
+                 handle_images,
+                 remove_latex_errors,
+                 remove_styling]
 def get_section_title(child):
     if 'ltx_abstract' in child.get('class', []):
         return 'Abstract'
@@ -147,13 +160,11 @@ def setup_directories(book_dir, EPUB_dir, meta_dir, css_dir, img_dir, xhtml_dir)
     os.makedirs(css_dir)
     os.makedirs(img_dir)
     os.makedirs(xhtml_dir)
-def remove_non_alphanumeric(s):
-    import re
-    return re.sub(r'[^a-zA-Z0-9]', '', s)
+
 def save_files(book_dir, meta_dir, EPUB_dir, css_dir, img_dir, xhtml_dir, data, images):
     save_file(os.path.join(book_dir, 'mimetype'), get_mimetype())
     save_file(os.path.join(meta_dir, 'container.xml'), get_container_xml())
-    save_file(os.path.join(EPUB_dir, 'package.opf'), get_package_opf(remove_non_alphanumeric(data['title']), data['author'], data['sections'], images))
+    save_file(os.path.join(EPUB_dir, 'package.opf'), get_package_opf((data['title']), data['author'], data['sections'], images))
 
     save_file(os.path.join(css_dir, 'commonltr.css'), get_common_itr_css())
     save_file(os.path.join(css_dir, 'epub.css'), get_epub_css())
