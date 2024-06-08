@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-
+import argparse
 from converter.converter import html_to_epub
 
 
@@ -77,5 +77,8 @@ def arxiv_to_paper(arxiv_link):
     html_to_epub(website_data,title, author)
 
 
-link = "https://arxiv.org/abs/2403.09611"
-arxiv_to_paper(link)
+parser = argparse.ArgumentParser(description="Process a link.")
+parser.add_argument('arxiv_link', type=str, help='The link to be processed')
+args = parser.parse_args()
+arxiv_link = args.arxiv_link
+arxiv_to_paper(arxiv_link)
