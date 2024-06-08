@@ -18,3 +18,4 @@ python3 main.py https://arxiv.org/abs/1706.03762
 ## Limitations
 1. Does not work on Kindle devices yet, since the kindle software does not support parsing of advanced objects (such as LateX equations)
 2. Performs conversion based on ar5iv (LateXML) and therefore new papers wont work (needs a week or two for the paper to be processed)
+3. Tables are sometimes not very well formatted.
