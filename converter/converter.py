@@ -216,7 +216,7 @@ def html_to_epub(website_data, title, author= 'Unknown', output_epub='book.epub'
     # Create EPUB file
     create_epub(book_dir, data['title'] + '.epub')
 
-    # shutil.rmtree(book_dir, ignore_errors=True)
+    shutil.rmtree(book_dir, ignore_errors=True)
 
 
 
